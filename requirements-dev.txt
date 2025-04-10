@@ -1,0 +1,7 @@
+pytest>=7.0.0
+pytest-cov>=4.0.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=1.0.0
+build>=0.8.0
+twine>=4.0.0 
