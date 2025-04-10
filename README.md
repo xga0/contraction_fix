@@ -1,5 +1,7 @@
 # Contraction Fix
 
+[![PyPI version](https://badge.fury.io/py/contraction-fix.svg)](https://pypi.org/project/contraction-fix/)
+
 A fast and efficient library for fixing contractions in text. This package provides tools to expand contractions in English text while maintaining high performance and accuracy.
 
 ## Features
