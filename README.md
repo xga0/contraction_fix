@@ -63,9 +63,9 @@ print(fixed_text)  # "I would like to see you all tomorrow"
 # Preview contractions
 matches = fixer.preview(text, context_size=5)
 for match in matches:
-    print(f"Found '{match['match']}' at position {match['start']}")
-    print(f"Context: '{match['context']}'")
-    print(f"Will be replaced with: '{match['replacement']}'")
+    print(f"Found '{match.text}' at position {match.start}")
+    print(f"Context: '{match.context}'")
+    print(f"Will be replaced with: '{match.replacement}'")
 
 # Add custom contraction
 fixer.add_contraction("gonna", "going to")
