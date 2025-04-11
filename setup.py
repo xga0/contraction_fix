@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="contraction-fix",
-    version="0.1.8",
+    version="0.1.9",
     description="A fast and efficient library for fixing contractions in text",
     long_description=long_description,
     long_description_content_type="text/markdown",

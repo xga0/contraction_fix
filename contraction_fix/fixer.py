@@ -181,11 +181,28 @@ class ContractionFixer:
                         if not self._is_contraction_s(matched_text):
                             return matched_text  # Keep possessive forms unchanged
                     
-                    # Get replacement, preserving original case if it's all uppercase
-                    replacement = self.combined_dict.get(matched_text.lower())
-                    if replacement and matched_text.isupper():
+                    # Try different apostrophe versions for lookup
+                    replacement = None
+                    lookup_versions = [
+                        matched_text,
+                        matched_text.lower(),
+                        matched_text.replace("'", "'"),
+                        matched_text.lower().replace("'", "'")
+                    ]
+                    
+                    for version in lookup_versions:
+                        if version in self.combined_dict:
+                            replacement = self.combined_dict[version]
+                            break
+                    
+                    # If no replacement found, return original
+                    if not replacement:
+                        return matched_text
+                    
+                    # Preserve case if original was uppercase
+                    if matched_text.isupper():
                         return replacement.upper()
-                    return replacement if replacement else matched_text
+                    return replacement
                     
                 return self.pattern.sub(replace_match, text)
             
