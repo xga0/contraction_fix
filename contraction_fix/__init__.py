@@ -18,5 +18,5 @@ def fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str:
         return default_fixer.fix(text)
     return ContractionFixer(use_informal, use_slang).fix(text)
 
-__version__ = "0.1.5"
+__version__ = "0.1.7"
 __all__ = ["fix"] 
