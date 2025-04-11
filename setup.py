@@ -7,7 +7,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name="contraction-fix",
-    version="0.1.7",
+    version="0.1.8",
     description="A fast and efficient library for fixing contractions in text",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -24,7 +24,9 @@ setup(
     install_requires=[],
     python_requires=">=3.7",
     license="MIT",
-    homepage="https://github.com/xga0/contraction_fix",
+    project_urls={
+        "Homepage": "https://github.com/xga0/contraction_fix",
+    },
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
