@@ -1,5 +1,5 @@
 import unittest
-from contraction_fix.core.fixer import ContractionFixer
+from contraction_fix.fixer import ContractionFixer
 
 class TestContractionFixer(unittest.TestCase):
     def setUp(self):
@@ -47,6 +47,33 @@ class TestContractionFixer(unittest.TestCase):
         self.assertEqual(len(matches), 2)
         self.assertEqual(matches[0]["match"], "can't")
         self.assertEqual(matches[1]["match"], "it's")
+
+    def test_possessive_vs_contraction(self):
+        test_cases = [
+            # Contractions
+            ("it's a nice day", "it is a nice day"),
+            ("that's interesting", "that is interesting"),
+            ("what's happening", "what is happening"),
+            ("there's a problem", "there is a problem"),
+            ("today's weather is nice", "today is weather is nice"),
+            
+            # Possessives (should remain unchanged)
+            ("John's car", "John's car"),
+            ("the dog's bone", "the dog's bone"),
+            ("my mother's house", "my mother's house"),
+            ("the company's policy", "the company's policy"),
+            ("James's book", "James's book"),
+            ("the boss's office", "the boss's office"),
+            ("the class's schedule", "the class's schedule"),
+            
+            # Mixed cases
+            ("It's John's car and that's final", "It is John's car and that is final"),
+            ("The company's CEO says it's time", "The company's CEO says it is time"),
+        ]
+        
+        for input_text, expected in test_cases:
+            with self.subTest(input_text=input_text):
+                self.assertEqual(self.fixer.fix(input_text), expected)
 
     def test_add_remove_contraction(self):
         # Test adding new contraction

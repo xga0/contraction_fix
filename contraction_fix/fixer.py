@@ -69,6 +69,75 @@ class ContractionFixer:
             re.IGNORECASE
         )
         
+        # Add pattern for detecting possessive vs contraction 's
+        self.possessive_pattern = re.compile(r"\b\w+['']s\b")
+        
+    def _is_contraction_s(self, word: str) -> bool:
+        """Determine if a word ending in 's is a contraction or possessive.
+        
+        Args:
+            word: The word to check (including the 's)
+            
+        Returns:
+            True if it's a contraction, False if it's possessive
+        """
+        # Remove the 's from the end
+        base = word[:-2].lower()
+        
+        # Common pronouns and question words that form contractions
+        contraction_bases = {
+            'he', 'she', 'it', 'what', 'who', 'that', 'there', 'here', 'where',
+            'when', 'why', 'how', 'this', 'everyone', 'somebody', 'someone',
+            'something', 'nobody', 'let'
+        }
+        
+        # Time-related words that typically form contractions
+        time_words = {
+            'today', 'tomorrow', 'tonight', 'morning', 'evening', 'afternoon',
+            'week', 'month', 'year', 'century', 'monday', 'tuesday', 'wednesday',
+            'thursday', 'friday', 'saturday', 'sunday'
+        }
+        
+        # Check if it's a common contraction base
+        if base in contraction_bases:
+            return True
+            
+        # Check if it's a time word (these can be both, but more commonly contractions)
+        if base in time_words:
+            return True
+            
+        # If the base word ends in s, x, z, ch, sh - likely possessive
+        if base.endswith(('s', 'x', 'z', 'ch', 'sh')):
+            return False
+            
+        # If the word is capitalized (not at start of sentence) - likely possessive (proper noun)
+        if word[0].isupper() and not self._is_sentence_start(word):
+            return False
+            
+        # Default to possessive for unknown cases
+        return False
+        
+    def _is_sentence_start(self, word: str, context: str = '', position: int = 0) -> bool:
+        """Check if a word appears at the start of a sentence.
+        
+        Args:
+            word: The word to check
+            context: The surrounding text (optional)
+            position: The position of the word in the text (optional)
+            
+        Returns:
+            True if the word is likely at the start of a sentence
+        """
+        if not context or position == 0:
+            return True
+            
+        # Check previous character for sentence endings
+        prev_char = context[position - 1] if position > 0 else ''
+        if prev_char in '.!?':
+            return True
+            
+        return False
+        
     @lru_cache(maxsize=1024)
     def fix(self, text: str) -> str:
         """Fix contractions in the given text.
@@ -81,7 +150,14 @@ class ContractionFixer:
         """
         def replace_match(match):
             matched_text = match.group(0)
-            return self.combined_dict.get(matched_text.lower(), matched_text)
+            lower_match = matched_text.lower()
+            
+            # Special handling for 's cases
+            if matched_text.endswith("'s") or matched_text.endswith("'s"):
+                if not self._is_contraction_s(matched_text):
+                    return matched_text  # Keep possessive forms unchanged
+                    
+            return self.combined_dict.get(lower_match, matched_text)
             
         return self.pattern.sub(replace_match, text)
         

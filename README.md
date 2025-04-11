@@ -31,6 +31,22 @@ fixed_text = fix(text)
 print(fixed_text)  # "I cannot believe it is not butter!"
 ```
 
+### Contractions vs. Possessives
+
+The package intelligently differentiates between contractions and possessive forms:
+
+```python
+from contraction_fix import fix
+
+text = "I can't find Sarah's keys, and she won't be at her brother's house until it's dark."
+fixed_text = fix(text)
+print(fixed_text)  # "I cannot find Sarah's keys, and she will not be at her brother's house until it is dark."
+```
+
+Notice how the package:
+- Expands contractions: "can't" → "cannot", "won't" → "will not", "it's" → "it is"
+- Preserves possessives: "Sarah's" and "brother's" remain unchanged
+
 ### Advanced Usage
 
 ```python
