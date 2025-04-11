@@ -35,4 +35,7 @@ ENV/
 
 # System
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Local development
+test.py 

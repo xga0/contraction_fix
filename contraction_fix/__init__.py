@@ -14,9 +14,10 @@ def fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str:
     Returns:
         The text with contractions fixed
     """
-    if use_informal == bool(default_fixer.informal) and use_slang == bool(default_fixer.slang):
-        return default_fixer.fix(text)
-    return ContractionFixer(use_informal, use_slang).fix(text)
+    # Always create a new instance with the requested settings
+    # This ensures thread safety and correct dictionary usage
+    fixer = ContractionFixer(use_informal=use_informal, use_slang=use_slang)
+    return fixer.fix(text)
 
-__version__ = "0.1.9"
-__all__ = ["fix"] 
+__version__ = "0.1.10"
+__all__ = ["fix", "ContractionFixer"] 

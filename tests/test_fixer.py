@@ -12,7 +12,7 @@ class TestContractionFixer(unittest.TestCase):
             ("They're coming", "They are coming"),
             ("We'll see", "We will see"),
             ("You'd better", "You would better"),
-            ("I'd like to see y'all", "I would like to see you all")  # Added test for I'd
+            ("I'd like to see y'all", "I would like to see you all")
         ]
         
         for input_text, expected in test_cases:
@@ -54,7 +54,8 @@ class TestContractionFixer(unittest.TestCase):
         
         # Test context size
         matches = self.fixer.preview(text, context_size=3)
-        self.assertTrue(len(matches[0].context) <= matches[0].text.length + 6)  # text length + 2*context_size
+        for match in matches:
+            self.assertLessEqual(len(match.context), len(match.text) + 6)  # text length + 2*context_size
 
     def test_possessive_vs_contraction(self):
         test_cases = [
@@ -105,11 +106,11 @@ class TestContractionFixer(unittest.TestCase):
         
         for input_text, expected in test_cases:
             with self.subTest(input_text=input_text):
-                # Replace standard with curly apostrophe in second test
-                if "'" in input_text:
-                    curly_input = input_text.replace("'", "'")
-                    self.assertEqual(self.fixer.fix(curly_input), expected)
+                # Test with standard apostrophe
                 self.assertEqual(self.fixer.fix(input_text), expected)
+                # Test with curly apostrophe
+                curly_input = input_text.replace("'", "'")
+                self.assertEqual(self.fixer.fix(curly_input), expected)
 
     def test_add_remove_contraction(self):
         # Test adding new contraction

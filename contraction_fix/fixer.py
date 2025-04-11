@@ -183,7 +183,7 @@ class ContractionFixer:
                     
                     # Try different apostrophe versions for lookup
                     replacement = None
-                    lookup_versions = [
+                    lookup_versions: list[str] = [
                         matched_text,
                         matched_text.lower(),
                         matched_text.replace("'", "'"),
