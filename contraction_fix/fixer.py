@@ -103,12 +103,11 @@ class ContractionFixer:
     @cached_property
     def pattern(self) -> re.Pattern:
         """Lazily compile and cache the regex pattern for matching contractions."""
-        if not self._pattern:
-            self._pattern = re.compile(
+        with self._lock:
+            return re.compile(
                 r'\b(' + '|'.join(re.escape(k) for k in self.combined_dict.keys()) + r')\b',
                 re.IGNORECASE
             )
-        return self._pattern
 
     def _is_contraction_s(self, word: str) -> bool:
         """Determine if a word ending in 's is a contraction or possessive.

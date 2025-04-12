@@ -1,6 +1,6 @@
 # Contraction Fix
 
-[![PyPI version](https://badge.fury.io/py/contraction-fix.svg)](https://pypi.org/project/contraction-fix/)
+[![PyPI version](https://img.shields.io/pypi/v/contraction-fix.svg?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/contraction-fix/)
 
 A fast and efficient library for fixing contractions in text. This package provides tools to expand contractions in English text while maintaining high performance and accuracy.
 
@@ -29,6 +29,43 @@ from contraction_fix import fix
 text = "I can't believe it's not butter!"
 fixed_text = fix(text)
 print(fixed_text)  # "I cannot believe it is not butter!"
+```
+
+### Instantiating `ContractionFix`
+
+Start by creating an instance of the `ContractionFix` class:
+
+```python
+from contraction_fix import ContractionFix
+
+fixer = ContractionFix()
+```
+
+### Optional Parameters:
+
+- **`use_informal: bool = True`**
+    
+    - Enables informal contractions like `"gonna"` → `"going to"`.
+        
+    - Set to `False` to avoid informal style expansions.
+        
+- **`use_slang: bool = True`**
+    
+    - Enables slang contractions like `"brb"` → `"be right back"`.
+        
+    - Set to `False` for more formal or academic applications.
+        
+- **`cache_size: int = 1024`**
+    
+    - Sets the LRU cache size for memoization. Improves performance when processing repeated inputs.
+        
+
+#### Example – Disabling slang:
+
+```python
+fixer = ContractionFix(use_slang=False)
+print(fixer.fix("brb, idk what's up"))  
+# Output: "brb, I don't know what is up"  (brb is skipped because use_slang=False)
 ```
 
 ### Contractions vs. Possessives
