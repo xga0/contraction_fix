@@ -1,6 +1,8 @@
 # Contraction Fix
 
-[![PyPI version](https://img.shields.io/pypi/v/contraction-fix.svg?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/contraction-fix/)
+[![PyPI version](https://img.shields.io/pypi/v/contraction-fix.svg)](https://pypi.org/project/contraction-fix/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/contraction-fix.svg)](https://pypi.org/project/contraction-fix/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A fast and efficient library for fixing contractions in text. This package provides tools to expand contractions in English text while maintaining high performance and accuracy.
 
