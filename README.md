@@ -9,11 +9,13 @@ A fast and efficient library for fixing contractions in text. This package provi
 ## Features
 
 - Fast text processing using precompiled regex patterns
+- **Batch processing for multiple texts with optimized performance**
 - Support for standard contractions, informal contractions, and internet slang
 - Configurable dictionary usage
-- Caching for improved performance
+- Optimized caching for improved performance
 - Preview functionality to see contractions before fixing
 - Easy addition and removal of custom contractions
+- Thread-safe operations
 
 ## Installation
 
@@ -33,14 +35,32 @@ fixed_text = fix(text)
 print(fixed_text)  # "I cannot believe it is not butter!"
 ```
 
-### Instantiating `ContractionFix`
+### Batch Processing (NEW!)
 
-Start by creating an instance of the `ContractionFix` class:
+For processing multiple texts efficiently:
 
 ```python
-from contraction_fix import ContractionFix
+from contraction_fix import fix_batch
 
-fixer = ContractionFix()
+texts = [
+    "I can't believe it's working!",
+    "They're going to the store",
+    "We'll see what happens"
+]
+
+fixed_texts = fix_batch(texts)
+print(fixed_texts)
+# Output: ["I cannot believe it is working!", "They are going to the store", "We will see what happens"]
+```
+
+### Instantiating `ContractionFixer`
+
+Start by creating an instance of the `ContractionFixer` class:
+
+```python
+from contraction_fix import ContractionFixer
+
+fixer = ContractionFixer()
 ```
 
 ### Optional Parameters:
@@ -65,7 +85,7 @@ fixer = ContractionFix()
 #### Example – Disabling slang:
 
 ```python
-fixer = ContractionFix(use_slang=False)
+fixer = ContractionFixer(use_slang=False)
 print(fixer.fix("brb, idk what's up"))  
 # Output: "brb, I don't know what is up"  (brb is skipped because use_slang=False)
 ```
@@ -94,10 +114,19 @@ from contraction_fix import ContractionFixer
 # Create a custom fixer instance
 fixer = ContractionFixer(use_informal=True, use_slang=False)
 
-# Fix text
+# Fix single text
 text = "I'd like to see y'all tomorrow"
 fixed_text = fixer.fix(text)
 print(fixed_text)  # "I would like to see you all tomorrow"
+
+# Fix multiple texts efficiently
+texts = [
+    "I can't believe it's working",
+    "They're going home",
+    "We'll see what happens"
+]
+fixed_texts = fixer.fix_batch(texts)
+print(fixed_texts)  # ["I cannot believe it is working", "They are going home", "We will see what happens"]
 
 # Preview contractions
 matches = fixer.preview(text, context_size=5)
@@ -124,10 +153,43 @@ The package uses three types of dictionaries:
 ## Performance
 
 The package is optimized for speed through:
-- Precompiled regex patterns
-- LRU caching of results
-- Efficient dictionary lookups
-- Minimal memory usage
+- Precompiled regex patterns with cached compilation
+- LRU caching of results for repeated inputs
+- Efficient dictionary lookups with optimized key ordering
+- **Batch processing for multiple texts**
+- Minimal memory usage with frozenset constants
+- Thread-safe operations
+
+### Batch Processing Performance
+
+When processing multiple texts, use `fix_batch()` for better performance:
+
+```python
+from contraction_fix import fix_batch
+
+# More efficient for multiple texts
+texts = ["I can't go", "They're here", "We'll see"]
+results = fix_batch(texts)  # Uses shared cache and optimized processing
+
+# Less efficient for multiple texts
+results = [fix(text) for text in texts]  # Creates new instances
+```
+
+## API Reference
+
+### Functions
+
+- `fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str`
+- `fix_batch(texts: List[str], use_informal: bool = True, use_slang: bool = True) -> List[str]`
+
+### Classes
+
+- `ContractionFixer(use_informal: bool = True, use_slang: bool = True, cache_size: int = 1024)`
+  - `fix(text: str) -> str`
+  - `fix_batch(texts: List[str]) -> List[str]`
+  - `preview(text: str, context_size: int = 10) -> List[Match]`
+  - `add_contraction(contraction: str, expansion: str) -> None`
+  - `remove_contraction(contraction: str) -> None`
 
 ## Contributing
 

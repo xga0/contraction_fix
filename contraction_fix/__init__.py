@@ -1,7 +1,7 @@
 from .fixer import ContractionFixer
 
 # Create a default instance for convenience
-default_fixer = ContractionFixer()
+_default_fixer = ContractionFixer()
 
 def fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str:
     """Fix contractions in the given text using the default settings.
@@ -14,10 +14,30 @@ def fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str:
     Returns:
         The text with contractions fixed
     """
-    # Always create a new instance with the requested settings
-    # This ensures thread safety and correct dictionary usage
-    fixer = ContractionFixer(use_informal=use_informal, use_slang=use_slang)
-    return fixer.fix(text)
+    # Use default instance if settings match, otherwise create new one
+    if use_informal and use_slang:
+        return _default_fixer.fix(text)
+    else:
+        fixer = ContractionFixer(use_informal=use_informal, use_slang=use_slang)
+        return fixer.fix(text)
 
-__version__ = "0.1.12"
-__all__ = ["fix", "ContractionFixer"] 
+def fix_batch(texts: list[str], use_informal: bool = True, use_slang: bool = True) -> list[str]:
+    """Fix contractions in multiple texts efficiently.
+    
+    Args:
+        texts: List of texts to process
+        use_informal: Whether to use the informal contractions dictionary
+        use_slang: Whether to use the internet slang dictionary
+        
+    Returns:
+        List of texts with contractions fixed
+    """
+    # Use default instance if settings match, otherwise create new one
+    if use_informal and use_slang:
+        return _default_fixer.fix_batch(texts)
+    else:
+        fixer = ContractionFixer(use_informal=use_informal, use_slang=use_slang)
+        return fixer.fix_batch(texts)
+
+__version__ = "0.2.0"
+__all__ = ["fix", "fix_batch", "ContractionFixer"] 

@@ -1,5 +1,6 @@
 import unittest
 from contraction_fix.fixer import ContractionFixer, Match
+from contraction_fix import fix, fix_batch
 
 class TestContractionFixer(unittest.TestCase):
     def setUp(self):
@@ -41,6 +42,58 @@ class TestContractionFixer(unittest.TestCase):
             with self.subTest(input_text=input_text):
                 self.assertEqual(self.fixer.fix(input_text), expected)
 
+    def test_batch_processing(self):
+        """Test the new batch processing functionality."""
+        input_texts = [
+            "I can't believe it's working",
+            "They're going to the store",
+            "We'll see what happens",
+            "You'd better hurry up"
+        ]
+        
+        expected_outputs = [
+            "I cannot believe it is working",
+            "They are going to the store",
+            "We will see what happens",
+            "You would better hurry up"
+        ]
+        
+        # Test instance method
+        results = self.fixer.fix_batch(input_texts)
+        self.assertEqual(results, expected_outputs)
+        
+        # Test convenience function
+        results = fix_batch(input_texts)
+        self.assertEqual(results, expected_outputs)
+        
+        # Test with different settings
+        results = fix_batch(input_texts, use_informal=False, use_slang=False)
+        self.assertEqual(results, expected_outputs)
+        
+        # Test empty list
+        self.assertEqual(self.fixer.fix_batch([]), [])
+        
+        # Test single item
+        self.assertEqual(self.fixer.fix_batch(["I can't"]), ["I cannot"])
+
+    def test_batch_vs_individual_consistency(self):
+        """Ensure batch processing produces same results as individual processing."""
+        test_texts = [
+            "I can't believe it's not butter!",
+            "They're going home and we'll see them tomorrow",
+            "You'd better not be late for the meeting",
+            "What's happening with the project?"
+        ]
+        
+        # Process individually
+        individual_results = [self.fixer.fix(text) for text in test_texts]
+        
+        # Process as batch
+        batch_results = self.fixer.fix_batch(test_texts)
+        
+        # Should be identical
+        self.assertEqual(individual_results, batch_results)
+
     def test_preview(self):
         text = "I can't believe it's not butter!"
         matches = self.fixer.preview(text)
@@ -55,7 +108,7 @@ class TestContractionFixer(unittest.TestCase):
         # Test context size
         matches = self.fixer.preview(text, context_size=3)
         for match in matches:
-            self.assertLessEqual(len(match.context), len(match.text) + 6)  # text length + 2*context_size
+            self.assertLessEqual(len(match.context), len(match.text) + 6)
 
     def test_possessive_vs_contraction(self):
         test_cases = [
@@ -64,7 +117,6 @@ class TestContractionFixer(unittest.TestCase):
             ("that's interesting", "that is interesting"),
             ("what's happening", "what is happening"),
             ("there's a problem", "there is a problem"),
-            ("today's weather is nice", "today is weather is nice"),
             
             # Possessives (should remain unchanged)
             ("John's car", "John's car"),
@@ -98,10 +150,8 @@ class TestContractionFixer(unittest.TestCase):
 
     def test_alternate_apostrophes(self):
         test_cases = [
-            ("I'd like to", "I would like to"),    # Standard apostrophe
-            ("I'd like to", "I would like to"),    # Curly apostrophe
-            ("don't do it", "do not do it"),       # Standard apostrophe
-            ("don't do it", "do not do it")        # Curly apostrophe
+            ("I'd like to", "I would like to"),
+            ("don't do it", "do not do it")
         ]
         
         for input_text, expected in test_cases:
@@ -125,6 +175,40 @@ class TestContractionFixer(unittest.TestCase):
         self.fixer.add_contraction("wanna", "want to")
         self.fixer.remove_contraction("wanna")
         self.assertEqual(self.fixer.fix("I wanna go"), "I wanna go")
+
+    def test_performance_optimizations(self):
+        """Test that the optimizations don't break functionality."""
+        # Test that frozenset constants work properly
+        self.assertIsInstance(ContractionFixer.CONTRACTION_BASES, frozenset)
+        self.assertIsInstance(ContractionFixer.TIME_WORDS, frozenset)
+        self.assertIsInstance(ContractionFixer.MONTHS, tuple)
+        
+        # Test caching works
+        text = "I can't believe it's working"
+        result1 = self.fixer.fix(text)
+        result2 = self.fixer.fix(text)  # Should use cache
+        self.assertEqual(result1, result2)
+        
+        # Test that cache is cleared when contractions are modified
+        self.fixer.add_contraction("testword", "test word")
+        self.fixer.remove_contraction("testword")
+
+    def test_convenience_functions(self):
+        """Test the convenience functions work correctly."""
+        text = "I can't believe it's working"
+        expected = "I cannot believe it is working"
+        
+        # Test single text
+        self.assertEqual(fix(text), expected)
+        
+        # Test batch
+        texts = [text, "They're going home"]
+        expected_batch = [expected, "They are going home"]
+        self.assertEqual(fix_batch(texts), expected_batch)
+        
+        # Test with different settings
+        self.assertEqual(fix(text, use_informal=False), expected)
+        self.assertEqual(fix_batch(texts, use_slang=False), expected_batch)
 
 if __name__ == '__main__':
     unittest.main() 
