@@ -62,7 +62,9 @@ class ContractionFixer:
             data = pkgutil.get_data("contraction_fix", f"data/{filename}")
             if data is None:
                 raise FileNotFoundError(f"Dictionary file {filename} not found")
-            return json.loads(data.decode("utf-8"))
+            raw_dict = json.loads(data.decode("utf-8"))
+            # Normalize keys to lowercase for consistent lookup
+            return {k.lower(): v for k, v in raw_dict.items()}
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in {filename}: {str(e)}")
         except Exception as e:
@@ -105,20 +107,15 @@ class ContractionFixer:
                 if not self._is_contraction_s(matched_text):
                     return matched_text
             
-            # Find the replacement text
-            replacement = None
+            # Find the replacement text (all keys are now lowercase)
             matched_lower = matched_text.lower()
             
             if matched_lower in self.combined_dict:
                 replacement = self.combined_dict[matched_lower]
-            elif matched_text in self.combined_dict:
-                replacement = self.combined_dict[matched_text]
             else:
-                alt_text = matched_text.replace("'", "'")
-                alt_lower = alt_text.lower()
-                if alt_lower in self.combined_dict:
-                    replacement = self.combined_dict[alt_lower]
-                elif alt_text in self.combined_dict:
+                # Try with alternative apostrophe
+                alt_text = matched_lower.replace("'", "'")
+                if alt_text in self.combined_dict:
                     replacement = self.combined_dict[alt_text]
                 else:
                     return matched_text
@@ -162,8 +159,10 @@ class ContractionFixer:
     def add_contraction(self, contraction: str, expansion: str) -> None:
         """Add a new contraction to the dictionary."""
         with self._lock:
-            self.combined_dict[contraction] = expansion
-            self.combined_dict[contraction.replace("'", "'")] = expansion
+            # Normalize to lowercase for consistent lookup
+            contraction_lower = contraction.lower()
+            self.combined_dict[contraction_lower] = expansion
+            self.combined_dict[contraction_lower.replace("'", "'")] = expansion
             if hasattr(self, 'pattern'):
                 delattr(self, 'pattern')
             self._fix_single.cache_clear()
@@ -171,8 +170,10 @@ class ContractionFixer:
     def remove_contraction(self, contraction: str) -> None:
         """Remove a contraction from the dictionary."""
         with self._lock:
-            self.combined_dict.pop(contraction, None)
-            self.combined_dict.pop(contraction.replace("'", "'"), None)
+            # Normalize to lowercase for consistent lookup
+            contraction_lower = contraction.lower()
+            self.combined_dict.pop(contraction_lower, None)
+            self.combined_dict.pop(contraction_lower.replace("'", "'"), None)
             if hasattr(self, 'pattern'):
                 delattr(self, 'pattern')
             self._fix_single.cache_clear() 
