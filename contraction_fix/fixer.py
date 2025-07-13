@@ -1,5 +1,4 @@
-from __future__ import annotations
-from typing import Dict, List, ClassVar
+from typing import Dict, List, ClassVar, FrozenSet, Tuple, Pattern
 import json
 import pkgutil
 from functools import lru_cache, cached_property
@@ -17,19 +16,19 @@ class Match:
 
 class ContractionFixer:
     # Class constants for commonly used sets
-    CONTRACTION_BASES: ClassVar[frozenset[str]] = frozenset({
+    CONTRACTION_BASES: ClassVar[FrozenSet[str]] = frozenset({
         'he', 'she', 'it', 'what', 'who', 'that', 'there', 'here', 'where',
         'when', 'why', 'how', 'this', 'everyone', 'somebody', 'someone',
         'something', 'nobody', 'let'
     })
     
-    TIME_WORDS: ClassVar[frozenset[str]] = frozenset({
+    TIME_WORDS: ClassVar[FrozenSet[str]] = frozenset({
         'today', 'tomorrow', 'tonight', 'morning', 'evening', 'afternoon',
         'week', 'month', 'year', 'century', 'monday', 'tuesday', 'wednesday',
         'thursday', 'friday', 'saturday', 'sunday'
     })
 
-    MONTHS: ClassVar[tuple[str, ...]] = (
+    MONTHS: ClassVar[Tuple[str, ...]] = (
         "january", "february", "march", "april", "june", "july",
         "august", "september", "october", "november", "december"
     )
@@ -75,7 +74,7 @@ class ContractionFixer:
         self.combined_dict.update(alt_contractions)
 
     @cached_property
-    def pattern(self) -> re.Pattern:
+    def pattern(self) -> Pattern[str]:
         """Lazily compile and cache the regex pattern for matching contractions."""
         return re.compile(
             r'\b(' + '|'.join(re.escape(k) for k in self.combined_dict.keys()) + r')\b',

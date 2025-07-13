@@ -1,3 +1,4 @@
+from typing import List
 from .fixer import ContractionFixer
 
 # Create a default instance for convenience
@@ -21,7 +22,7 @@ def fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str:
         fixer = ContractionFixer(use_informal=use_informal, use_slang=use_slang)
         return fixer.fix(text)
 
-def fix_batch(texts: list[str], use_informal: bool = True, use_slang: bool = True) -> list[str]:
+def fix_batch(texts: List[str], use_informal: bool = True, use_slang: bool = True) -> List[str]:
     """Fix contractions in multiple texts efficiently.
     
     Args:
