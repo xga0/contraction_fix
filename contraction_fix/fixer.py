@@ -105,7 +105,10 @@ class ContractionFixer:
                 if not self._is_contraction_s(matched_text):
                     return matched_text
             
+            # Find the replacement text
+            replacement = None
             matched_lower = matched_text.lower()
+            
             if matched_lower in self.combined_dict:
                 replacement = self.combined_dict[matched_lower]
             elif matched_text in self.combined_dict:
@@ -120,7 +123,13 @@ class ContractionFixer:
                 else:
                     return matched_text
             
-            return replacement.upper() if matched_text.isupper() else replacement
+            # Preserve case pattern
+            if matched_text.isupper():
+                return replacement.upper()
+            elif matched_text[0].isupper():
+                return replacement.capitalize()
+            else:
+                return replacement
                 
         return self.pattern.sub(replace_match, text)
 
