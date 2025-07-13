@@ -54,7 +54,7 @@ This project uses GitHub Actions to automatically publish to PyPI. Here's how to
 ## Features
 
 ### ✅ **Automated Testing**
-- Tests run on Python 3.7-3.12 before publishing
+- Tests run on Python 3.8-3.12 before publishing
 - Prevents publishing broken packages
 - Can be skipped for manual workflow if needed
 
@@ -77,7 +77,7 @@ This project uses GitHub Actions to automatically publish to PyPI. Here's how to
 
 - **Always update the version in `setup.py` before publishing**
 - The workflows automatically prevent duplicate version publishing
-- Tests run on all supported Python versions (3.7-3.12)
+- Tests run on all supported Python versions (3.8-3.12)
 - Package validation occurs before every publish
 - Trusted publishing is more secure than API tokens
 
@@ -88,7 +88,7 @@ This project uses GitHub Actions to automatically publish to PyPI. Here's how to
 3. Push to GitHub: `git push origin main`
 4. Create a release or tag (depending on your preferred method)
 5. GitHub Actions will:
-   - Run tests on all Python versions
+   - Run tests on all Python versions (3.8-3.12)
    - Validate the package
    - Check for duplicate versions
    - Publish to PyPI automatically
