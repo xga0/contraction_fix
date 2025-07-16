@@ -61,13 +61,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install build twine
-    
-    - name: Build package
-      run: python -m build
-    
-    - name: Check package
-      run: twine check dist/*
+        pip install build twine setuptools
     
     - name: Check if version already exists on PyPI
       run: |
@@ -80,6 +74,12 @@ jobs:
         else
           echo "✅ Version $VERSION is new, proceeding with publication."
         fi
+    
+    - name: Build package
+      run: python -m build
+    
+    - name: Check package
+      run: twine check dist/*
     
     - name: Publish to PyPI (Trusted Publishing)
       uses: pypa/gh-action-pypi-publish@release/v1
