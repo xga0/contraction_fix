@@ -71,15 +71,8 @@ jobs:
     - name: Check package
       run: twine check dist/*
     
-    - name: Publish to PyPI (Trusted Publishing)
-      uses: pypa/gh-action-pypi-publish@release/v1
-      # If you set up trusted publishing on PyPI, this will work without tokens
-      # Otherwise, fallback to API token method below
-      continue-on-error: true
-      id: trusted_publish
-    
-    - name: Publish to PyPI (API Token)
-      if: steps.trusted_publish.outcome == 'failure'
+    - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
-        password: ${{ secrets.PYPI_API_TOKEN }} 
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        verbose: true 
