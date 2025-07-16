@@ -81,6 +81,16 @@ jobs:
     - name: Check package
       run: twine check dist/*
     
+    - name: Check API Token
+      run: |
+        if [ -z "${{ secrets.PYPI_API_TOKEN }}" ]; then
+          echo "❌ PYPI_API_TOKEN secret is not set!"
+          echo "Please add your PyPI API token to GitHub repository secrets."
+          exit 1
+        else
+          echo "✅ PYPI_API_TOKEN secret is configured"
+        fi
+    
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
