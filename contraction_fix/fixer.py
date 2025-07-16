@@ -78,8 +78,20 @@ class ContractionFixer:
     @cached_property
     def pattern(self) -> Pattern[str]:
         """Lazily compile and cache the regex pattern for matching contractions."""
+        # Sort keys by length (longest first) to avoid partial matches
+        sorted_keys = sorted(self.combined_dict.keys(), key=len, reverse=True)
+        # Use word boundaries but handle apostrophes correctly
+        pattern_parts = []
+        for key in sorted_keys:
+            escaped = re.escape(key)
+            # For words ending with apostrophe + letter(s), use different boundary
+            if "'" in key:
+                pattern_parts.append(r'(?<!\w)' + escaped + r'(?!\w)')
+            else:
+                pattern_parts.append(r'\b' + escaped + r'\b')
+        
         return re.compile(
-            r'\b(' + '|'.join(re.escape(k) for k in self.combined_dict.keys()) + r')\b',
+            '(' + '|'.join(pattern_parts) + ')',
             re.IGNORECASE
         )
 
