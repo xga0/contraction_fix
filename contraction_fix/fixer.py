@@ -15,7 +15,6 @@ class Match:
     context: str
 
 class ContractionFixer:
-    # Class constants for commonly used sets
     CONTRACTION_BASES: ClassVar[FrozenSet[str]] = frozenset({
         'he', 'she', 'it', 'what', 'who', 'that', 'there', 'here', 'where',
         'when', 'why', 'how', 'this', 'everyone', 'somebody', 'someone',
@@ -51,10 +50,8 @@ class ContractionFixer:
             if use_slang:
                 self.combined_dict.update(slang)
             
-            # Create reverse dictionary for contracting functionality
             self.reverse_dict = {}
             
-            # Define common, safe standard contractions to include in reverse mapping
             safe_contractions = {
                 "am not", "are not", "cannot", "could not", "did not", "do not", "does not",
                 "had not", "has not", "have not", "he is", "he will", "he would", "here is",
@@ -69,22 +66,17 @@ class ContractionFixer:
                 "would have", "I would have", "going to", "want to", "got to", "kind of"
             }
             
-            # Build reverse dictionary with only safe standard contractions
             for contraction, expansion in standard.items():
                 expansion_lower = expansion.lower()
-                # Only include safe, common contractions
                 if expansion_lower in safe_contractions and "'" in contraction and len(contraction) > 2:
-                    # Prefer common contractions over archaic ones
                     if expansion_lower not in self.reverse_dict:
                         self.reverse_dict[expansion_lower] = contraction
                     else:
-                        # Prefer shorter, more common contractions that don't start with apostrophes
                         existing = self.reverse_dict[expansion_lower]
                         if (not contraction.startswith("'") and existing.startswith("'")) or \
                            (len(contraction) < len(existing) and not contraction.startswith("'")):
                             self.reverse_dict[expansion_lower] = contraction
             
-            # Optionally add a few safe informal contractions if enabled
             if use_informal:
                 safe_informal = {
                     "going": "goin'",
@@ -94,8 +86,6 @@ class ContractionFixer:
                 for expansion, contraction in safe_informal.items():
                     if expansion not in self.reverse_dict:
                         self.reverse_dict[expansion] = contraction
-            
-            # Don't add slang to reverse dictionary - too unpredictable
             
             self._add_alt_apostrophes()
             
@@ -109,7 +99,6 @@ class ContractionFixer:
             if data is None:
                 raise FileNotFoundError(f"Dictionary file {filename} not found")
             raw_dict = json.loads(data.decode("utf-8"))
-            # Normalize keys to lowercase for consistent lookup
             return {k.lower(): v for k, v in raw_dict.items()}
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in {filename}: {str(e)}")
@@ -124,13 +113,10 @@ class ContractionFixer:
     @cached_property
     def pattern(self) -> Pattern[str]:
         """Lazily compile and cache the regex pattern for matching contractions."""
-        # Sort keys by length (longest first) to avoid partial matches
         sorted_keys = sorted(self.combined_dict.keys(), key=len, reverse=True)
-        # Use word boundaries but handle apostrophes correctly
         pattern_parts = []
         for key in sorted_keys:
             escaped = re.escape(key)
-            # For words ending with apostrophe + letter(s), use different boundary
             if "'" in key:
                 pattern_parts.append(r'(?<!\w)' + escaped + r'(?!\w)')
             else:
@@ -144,9 +130,7 @@ class ContractionFixer:
     @cached_property
     def reverse_pattern(self) -> Pattern[str]:
         """Lazily compile and cache the regex pattern for matching expanded forms."""
-        # Sort keys by length (longest first) to avoid partial matches
         sorted_keys = sorted(self.reverse_dict.keys(), key=len, reverse=True)
-        # Use word boundaries for full word matching
         pattern_parts = [r'\b' + re.escape(key) + r'\b' for key in sorted_keys]
         
         return re.compile(
@@ -176,20 +160,17 @@ class ContractionFixer:
                 if not self._is_contraction_s(matched_text):
                     return matched_text
             
-            # Find the replacement text (all keys are now lowercase)
             matched_lower = matched_text.lower()
             
             if matched_lower in self.combined_dict:
                 replacement = self.combined_dict[matched_lower]
             else:
-                # Try with alternative apostrophe
                 alt_text = matched_lower.replace("'", "'")
                 if alt_text in self.combined_dict:
                     replacement = self.combined_dict[alt_text]
                 else:
                     return matched_text
             
-            # Preserve case pattern
             if matched_text.isupper():
                 return replacement.upper()
             elif matched_text[0].isupper():
@@ -209,7 +190,6 @@ class ContractionFixer:
             if matched_lower in self.reverse_dict:
                 replacement = self.reverse_dict[matched_lower]
                 
-                # Preserve case pattern
                 if matched_text.isupper():
                     return replacement.upper()
                 elif matched_text[0].isupper():
@@ -258,22 +238,18 @@ class ContractionFixer:
     def add_contraction(self, contraction: str, expansion: str) -> None:
         """Add a new contraction to the dictionary."""
         with self._lock:
-            # Normalize to lowercase for consistent lookup
             contraction_lower = contraction.lower()
             expansion_lower = expansion.lower()
             
             self.combined_dict[contraction_lower] = expansion
             self.combined_dict[contraction_lower.replace("'", "'")] = expansion
             
-            # Update reverse dictionary - add the new contraction
             if "'" in contraction_lower and len(contraction_lower) > 1:
-                # Add to reverse dictionary, preferring shorter contractions
                 if expansion_lower not in self.reverse_dict:
                     self.reverse_dict[expansion_lower] = contraction_lower
                 elif len(contraction_lower) < len(self.reverse_dict[expansion_lower]):
                     self.reverse_dict[expansion_lower] = contraction_lower
             
-            # Clear cached patterns
             if hasattr(self, 'pattern'):
                 delattr(self, 'pattern')
             if hasattr(self, 'reverse_pattern'):
@@ -284,22 +260,17 @@ class ContractionFixer:
     def remove_contraction(self, contraction: str) -> None:
         """Remove a contraction from the dictionary."""
         with self._lock:
-            # Normalize to lowercase for consistent lookup
             contraction_lower = contraction.lower()
             
-            # Get expansion before removing
             expansion = self.combined_dict.get(contraction_lower)
             
-            # Remove from forward dictionary
             self.combined_dict.pop(contraction_lower, None)
             self.combined_dict.pop(contraction_lower.replace("'", "'"), None)
             
-            # Remove from reverse dictionary if this was the mapped contraction
             if expansion and expansion.lower() in self.reverse_dict:
                 if self.reverse_dict[expansion.lower()] == contraction_lower:
                     del self.reverse_dict[expansion.lower()]
             
-            # Clear cached patterns
             if hasattr(self, 'pattern'):
                 delattr(self, 'pattern')
             if hasattr(self, 'reverse_pattern'):

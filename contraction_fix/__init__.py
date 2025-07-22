@@ -1,7 +1,6 @@
 from typing import List
 from .fixer import ContractionFixer
 
-# Create a default instance for convenience
 _default_fixer = ContractionFixer()
 
 def fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str:
@@ -15,7 +14,6 @@ def fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str:
     Returns:
         The text with contractions fixed
     """
-    # Use default instance if settings match, otherwise create new one
     if use_informal and use_slang:
         return _default_fixer.fix(text)
     else:
@@ -33,7 +31,6 @@ def fix_batch(texts: List[str], use_informal: bool = True, use_slang: bool = Tru
     Returns:
         List of texts with contractions fixed
     """
-    # Use default instance if settings match, otherwise create new one
     if use_informal and use_slang:
         return _default_fixer.fix_batch(texts)
     else:
@@ -51,7 +48,6 @@ def contract(text: str, use_informal: bool = True, use_slang: bool = True) -> st
     Returns:
         The text with expanded forms contracted back to contractions
     """
-    # Use default instance if settings match, otherwise create new one
     if use_informal and use_slang:
         return _default_fixer.contract(text)
     else:
@@ -69,7 +65,6 @@ def contract_batch(texts: List[str], use_informal: bool = True, use_slang: bool 
     Returns:
         List of texts with expanded forms contracted back to contractions
     """
-    # Use default instance if settings match, otherwise create new one
     if use_informal and use_slang:
         return _default_fixer.contract_batch(texts)
     else:
