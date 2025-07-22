@@ -40,5 +40,41 @@ def fix_batch(texts: List[str], use_informal: bool = True, use_slang: bool = Tru
         fixer = ContractionFixer(use_informal=use_informal, use_slang=use_slang)
         return fixer.fix_batch(texts)
 
-__version__ = "0.2.0"
-__all__ = ["fix", "fix_batch", "ContractionFixer"] 
+def contract(text: str, use_informal: bool = True, use_slang: bool = True) -> str:
+    """Contract expanded forms back to contractions in the given text.
+    
+    Args:
+        text: The text to contract
+        use_informal: Whether to use the informal contractions dictionary
+        use_slang: Whether to use the internet slang dictionary
+        
+    Returns:
+        The text with expanded forms contracted back to contractions
+    """
+    # Use default instance if settings match, otherwise create new one
+    if use_informal and use_slang:
+        return _default_fixer.contract(text)
+    else:
+        fixer = ContractionFixer(use_informal=use_informal, use_slang=use_slang)
+        return fixer.contract(text)
+
+def contract_batch(texts: List[str], use_informal: bool = True, use_slang: bool = True) -> List[str]:
+    """Contract expanded forms back to contractions in multiple texts efficiently.
+    
+    Args:
+        texts: List of texts to process
+        use_informal: Whether to use the informal contractions dictionary
+        use_slang: Whether to use the internet slang dictionary
+        
+    Returns:
+        List of texts with expanded forms contracted back to contractions
+    """
+    # Use default instance if settings match, otherwise create new one
+    if use_informal and use_slang:
+        return _default_fixer.contract_batch(texts)
+    else:
+        fixer = ContractionFixer(use_informal=use_informal, use_slang=use_slang)
+        return fixer.contract_batch(texts)
+
+__version__ = "0.2.1"
+__all__ = ["fix", "fix_batch", "contract", "contract_batch", "ContractionFixer"] 

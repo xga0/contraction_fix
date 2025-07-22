@@ -4,12 +4,13 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/contraction-fix.svg)](https://pypi.org/project/contraction-fix/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A fast and efficient library for fixing contractions in text. This package provides tools to expand contractions in English text while maintaining high performance and accuracy.
+A fast and efficient library for fixing contractions in text. This package provides tools to expand contractions in English text while maintaining high performance and accuracy. **NEW in v0.2.1: Reverse functionality to contract expanded forms back to contractions!**
 
 ## Features
 
 - Fast text processing using precompiled regex patterns
 - **Batch processing for multiple texts with optimized performance**
+- **NEW: Reverse functionality to contract expanded forms back to contractions**
 - Support for standard contractions, informal contractions, and internet slang
 - Configurable dictionary usage
 - Optimized caching for improved performance
@@ -27,6 +28,8 @@ pip install contraction-fix
 
 ### Basic Usage
 
+#### Expanding Contractions
+
 ```python
 from contraction_fix import fix
 
@@ -35,7 +38,19 @@ fixed_text = fix(text)
 print(fixed_text)  # "I cannot believe it is not butter!"
 ```
 
-### Batch Processing (NEW!)
+#### Contracting Expanded Forms (NEW!)
+
+```python
+from contraction_fix import contract
+
+text = "I cannot believe it is not butter!"
+contracted_text = contract(text)
+print(contracted_text)  # "I can't believe it's not butter!"
+```
+
+### Batch Processing
+
+#### Expanding Contractions in Batch
 
 For processing multiple texts efficiently:
 
@@ -51,6 +66,22 @@ texts = [
 fixed_texts = fix_batch(texts)
 print(fixed_texts)
 # Output: ["I cannot believe it is working!", "They are going to the store", "We will see what happens"]
+```
+
+#### Contracting Expanded Forms in Batch (NEW!)
+
+```python
+from contraction_fix import contract_batch
+
+texts = [
+    "I cannot believe it is working!",
+    "They are going to the store", 
+    "We will see what happens"
+]
+
+contracted_texts = contract_batch(texts)
+print(contracted_texts)
+# Output: ["I can't believe it's working!", "They're goin' to the store", "We'll see what happens"]
 ```
 
 ### Instantiating `ContractionFixer`
@@ -119,6 +150,11 @@ text = "I'd like to see y'all tomorrow"
 fixed_text = fixer.fix(text)
 print(fixed_text)  # "I would like to see you all tomorrow"
 
+# Contract single text (NEW!)
+expanded_text = "I would like to see you all tomorrow"
+contracted_text = fixer.contract(expanded_text)
+print(contracted_text)  # "I would like to see y'all tomorrow"
+
 # Fix multiple texts efficiently
 texts = [
     "I can't believe it's working",
@@ -127,6 +163,15 @@ texts = [
 ]
 fixed_texts = fixer.fix_batch(texts)
 print(fixed_texts)  # ["I cannot believe it is working", "They are going home", "We will see what happens"]
+
+# Contract multiple texts efficiently (NEW!)
+expanded_texts = [
+    "I cannot believe it is working",
+    "They are going home",
+    "We will see what happens"
+]
+contracted_texts = fixer.contract_batch(expanded_texts)
+print(contracted_texts)  # ["I can't believe it's working", "They're goin' home", "We'll see what happens"]
 
 # Preview contractions
 matches = fixer.preview(text, context_size=5)
@@ -162,14 +207,18 @@ The package is optimized for speed through:
 
 ### Batch Processing Performance
 
-When processing multiple texts, use `fix_batch()` for better performance:
+When processing multiple texts, use `fix_batch()` or `contract_batch()` for better performance:
 
 ```python
-from contraction_fix import fix_batch
+from contraction_fix import fix_batch, contract_batch
 
 # More efficient for multiple texts
 texts = ["I can't go", "They're here", "We'll see"]
 results = fix_batch(texts)  # Uses shared cache and optimized processing
+
+# For reverse processing
+expanded_texts = ["I cannot go", "They are here", "We will see"]
+results = contract_batch(expanded_texts)  # Uses shared cache and optimized processing
 
 # Less efficient for multiple texts
 results = [fix(text) for text in texts]  # Creates new instances
@@ -181,15 +230,26 @@ results = [fix(text) for text in texts]  # Creates new instances
 
 - `fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str`
 - `fix_batch(texts: List[str], use_informal: bool = True, use_slang: bool = True) -> List[str]`
+- `contract(text: str, use_informal: bool = True, use_slang: bool = True) -> str` **(NEW!)**
+- `contract_batch(texts: List[str], use_informal: bool = True, use_slang: bool = True) -> List[str]` **(NEW!)**
 
 ### Classes
 
 - `ContractionFixer(use_informal: bool = True, use_slang: bool = True, cache_size: int = 1024)`
   - `fix(text: str) -> str`
   - `fix_batch(texts: List[str]) -> List[str]`
+  - `contract(text: str) -> str` **(NEW!)**
+  - `contract_batch(texts: List[str]) -> List[str]` **(NEW!)**
   - `preview(text: str, context_size: int = 10) -> List[Match]`
   - `add_contraction(contraction: str, expansion: str) -> None`
   - `remove_contraction(contraction: str) -> None`
+
+## What's New in v0.2.1
+
+- **Reverse Functionality**: New `contract()` and `contract_batch()` methods to convert expanded forms back to contractions
+- **Enhanced API**: Package-level convenience functions for reverse functionality
+- **Comprehensive Testing**: Extensive test coverage for all new functionality
+- **Improved Performance**: Optimizations for both expansion and contraction operations
 
 ## Contributing
 
