@@ -4,19 +4,18 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/contraction-fix.svg)](https://pypi.org/project/contraction-fix/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A fast and efficient library for fixing contractions in text. This package provides tools to expand contractions in English text while maintaining high performance and accuracy. **NEW in v0.2.1: Reverse functionality to contract expanded forms back to contractions!**
+A fast and efficient Python library for fixing contractions in English text. Expand contractions like "can't" → "cannot" or contract expanded forms like "cannot" → "can't" with high performance and accuracy.
 
 ## Features
 
-- Fast text processing using precompiled regex patterns
-- **Batch processing for multiple texts with optimized performance**
-- **NEW: Reverse functionality to contract expanded forms back to contractions**
-- Support for standard contractions, informal contractions, and internet slang
-- Configurable dictionary usage
-- Optimized caching for improved performance
-- Preview functionality to see contractions before fixing
-- Easy addition and removal of custom contractions
-- Thread-safe operations
+- **Bidirectional processing**: Expand contractions or contract expanded forms
+- **High performance**: Optimized with precompiled regex patterns and LRU caching
+- **Batch processing**: Efficiently process multiple texts at once
+- **Smart detection**: Distinguishes between contractions and possessives
+- **Configurable dictionaries**: Support for standard, informal, and internet slang
+- **Thread-safe**: Safe for concurrent usage
+- **Extensible**: Add or remove custom contractions
+- **Preview mode**: See what changes will be made before applying them
 
 ## Installation
 
@@ -24,38 +23,50 @@ A fast and efficient library for fixing contractions in text. This package provi
 pip install contraction-fix
 ```
 
-## Usage
+## Quick Start
 
-### Basic Usage
-
-#### Expanding Contractions
+### Expanding Contractions
 
 ```python
 from contraction_fix import fix
 
 text = "I can't believe it's not butter!"
-fixed_text = fix(text)
-print(fixed_text)  # "I cannot believe it is not butter!"
+result = fix(text)
+print(result)  # "I cannot believe it is not butter!"
 ```
 
-#### Contracting Expanded Forms (NEW!)
+### Contracting Expanded Forms
 
 ```python
 from contraction_fix import contract
 
 text = "I cannot believe it is not butter!"
-contracted_text = contract(text)
-print(contracted_text)  # "I can't believe it's not butter!"
+result = contract(text)
+print(result)  # "I can't believe it's not butter!"
+```
+
+## Core Functionality
+
+### Single Text Processing
+
+```python
+from contraction_fix import fix, contract
+
+# Expand contractions
+expanded = fix("I'd like to see y'all tomorrow")
+print(expanded)  # "I would like to see you all tomorrow"
+
+# Contract expanded forms
+contracted = contract("I would like to see you all tomorrow")
+print(contracted)  # "I'd like to see y'all tomorrow"
 ```
 
 ### Batch Processing
 
-#### Expanding Contractions in Batch
-
 For processing multiple texts efficiently:
 
 ```python
-from contraction_fix import fix_batch
+from contraction_fix import fix_batch, contract_batch
 
 texts = [
     "I can't believe it's working!",
@@ -63,197 +74,274 @@ texts = [
     "We'll see what happens"
 ]
 
-fixed_texts = fix_batch(texts)
-print(fixed_texts)
-# Output: ["I cannot believe it is working!", "They are going to the store", "We will see what happens"]
-```
+# Expand all texts
+expanded = fix_batch(texts)
+print(expanded)
+# ["I cannot believe it is working!", "They are going to the store", "We will see what happens"]
 
-#### Contracting Expanded Forms in Batch (NEW!)
-
-```python
-from contraction_fix import contract_batch
-
-texts = [
+# Contract all texts
+contracted = contract_batch([
     "I cannot believe it is working!",
     "They are going to the store", 
     "We will see what happens"
-]
-
-contracted_texts = contract_batch(texts)
-print(contracted_texts)
-# Output: ["I can't believe it's working!", "They're goin' to the store", "We'll see what happens"]
+])
+print(contracted)
+# ["I can't believe it's working!", "They're goin' to the store", "We'll see what happens"]
 ```
 
-### Instantiating `ContractionFixer`
+### Smart Contraction Detection
 
-Start by creating an instance of the `ContractionFixer` class:
-
-```python
-from contraction_fix import ContractionFixer
-
-fixer = ContractionFixer()
-```
-
-### Optional Parameters:
-
-- **`use_informal: bool = True`**
-    
-    - Enables informal contractions like `"gonna"` → `"going to"`.
-        
-    - Set to `False` to avoid informal style expansions.
-        
-- **`use_slang: bool = True`**
-    
-    - Enables slang contractions like `"brb"` → `"be right back"`.
-        
-    - Set to `False` for more formal or academic applications.
-        
-- **`cache_size: int = 1024`**
-    
-    - Sets the LRU cache size for memoization. Improves performance when processing repeated inputs.
-        
-
-#### Example – Disabling slang:
-
-```python
-fixer = ContractionFixer(use_slang=False)
-print(fixer.fix("brb, idk what's up"))  
-# Output: "brb, I don't know what is up"  (brb is skipped because use_slang=False)
-```
-
-### Contractions vs. Possessives
-
-The package intelligently differentiates between contractions and possessive forms:
+The library intelligently distinguishes between contractions and possessive forms:
 
 ```python
 from contraction_fix import fix
 
 text = "I can't find Sarah's keys, and she won't be at her brother's house until it's dark."
-fixed_text = fix(text)
-print(fixed_text)  # "I cannot find Sarah's keys, and she will not be at her brother's house until it is dark."
+result = fix(text)
+print(result)
+# "I cannot find Sarah's keys, and she will not be at her brother's house until it is dark."
 ```
 
-Notice how the package:
-- Expands contractions: "can't" → "cannot", "won't" → "will not", "it's" → "it is"
-- Preserves possessives: "Sarah's" and "brother's" remain unchanged
+Notice how:
+- Contractions are expanded: "can't" → "cannot", "won't" → "will not", "it's" → "it is"
+- Possessives are preserved: "Sarah's" and "brother's" remain unchanged
 
-### Advanced Usage
+## Advanced Usage
+
+### Custom Configuration
 
 ```python
 from contraction_fix import ContractionFixer
 
-# Create a custom fixer instance
-fixer = ContractionFixer(use_informal=True, use_slang=False)
+# Create a custom fixer with specific settings
+fixer = ContractionFixer(
+    use_informal=True,   # Include informal contractions like "gonna", "goin'"
+    use_slang=False,     # Exclude internet slang like "lol", "brb"
+    cache_size=2048      # Increase cache size for better performance
+)
 
-# Fix single text
-text = "I'd like to see y'all tomorrow"
-fixed_text = fixer.fix(text)
-print(fixed_text)  # "I would like to see you all tomorrow"
+text = "I'm gonna see y'all later, brb"
+result = fixer.fix(text)
+print(result)  # "I am going to see you all later, brb"
+# Note: "brb" is preserved because use_slang=False
+```
 
-# Contract single text (NEW!)
-expanded_text = "I would like to see you all tomorrow"
-contracted_text = fixer.contract(expanded_text)
-print(contracted_text)  # "I would like to see y'all tomorrow"
+### Preview Changes
 
-# Fix multiple texts efficiently
-texts = [
-    "I can't believe it's working",
-    "They're going home",
-    "We'll see what happens"
-]
-fixed_texts = fixer.fix_batch(texts)
-print(fixed_texts)  # ["I cannot believe it is working", "They are going home", "We will see what happens"]
+See what changes will be made before applying them:
 
-# Contract multiple texts efficiently (NEW!)
-expanded_texts = [
-    "I cannot believe it is working",
-    "They are going home",
-    "We will see what happens"
-]
-contracted_texts = fixer.contract_batch(expanded_texts)
-print(contracted_texts)  # ["I can't believe it's working", "They're goin' home", "We'll see what happens"]
+```python
+from contraction_fix import ContractionFixer
 
-# Preview contractions
+fixer = ContractionFixer()
+text = "I can't believe it's working!"
+
 matches = fixer.preview(text, context_size=5)
 for match in matches:
     print(f"Found '{match.text}' at position {match.start}")
     print(f"Context: '{match.context}'")
-    print(f"Will be replaced with: '{match.replacement}'")
+    print(f"Will replace with: '{match.replacement}'")
+    print()
+```
+
+### Custom Contractions
+
+Add or remove contractions dynamically:
+
+```python
+from contraction_fix import ContractionFixer
+
+fixer = ContractionFixer()
 
 # Add custom contraction
-fixer.add_contraction("gonna", "going to")
+fixer.add_contraction("lemme", "let me")
+print(fixer.fix("lemme know"))  # "let me know"
 
-# Remove contraction
+# Remove existing contraction
 fixer.remove_contraction("won't")
+print(fixer.fix("I won't go"))  # "I won't go" (unchanged)
 ```
 
 ## Dictionary Types
 
-The package uses three types of dictionaries:
+The library uses three configurable dictionary types:
 
-1. **Standard Contractions**: Common English contractions like "can't", "won't", etc.
-2. **Informal Contractions**: Less formal contractions and patterns like "goin'", "doin'", etc.
-3. **Internet Slang**: Modern internet slang and abbreviations like "lol", "btw", etc.
+### Standard Contractions
+Common English contractions like:
+- "can't" → "cannot"
+- "won't" → "will not"
+- "it's" → "it is"
+- "they're" → "they are"
+
+### Informal Contractions
+Less formal patterns like:
+- "gonna" → "going to"
+- "goin'" → "going"
+- "doin'" → "doing"
+- "nothin'" → "nothing"
+
+### Internet Slang
+Modern abbreviations like:
+- "btw" → "by the way"
+- "lol" → "laugh out loud"
+- "idk" → "I do not know"
+- "tbh" → "to be honest"
 
 ## Performance
 
-The package is optimized for speed through:
-- Precompiled regex patterns with cached compilation
-- LRU caching of results for repeated inputs
-- Efficient dictionary lookups with optimized key ordering
-- **Batch processing for multiple texts**
-- Minimal memory usage with frozenset constants
-- Thread-safe operations
+The library is highly optimized for speed and efficiency:
 
-### Batch Processing Performance
+- **Precompiled regex patterns** with intelligent grouping
+- **LRU caching** for repeated inputs (configurable cache size)
+- **Efficient data structures** using frozensets and slots
+- **Batch processing optimization** for multiple texts
+- **Memory efficient** with minimal allocations
+- **Thread-safe operations** with proper locking
 
-When processing multiple texts, use `fix_batch()` or `contract_batch()` for better performance:
+### Performance Best Practices
 
 ```python
-from contraction_fix import fix_batch, contract_batch
+from contraction_fix import fix_batch, ContractionFixer
 
-# More efficient for multiple texts
+# ✅ Efficient: Use batch processing for multiple texts
 texts = ["I can't go", "They're here", "We'll see"]
-results = fix_batch(texts)  # Uses shared cache and optimized processing
+results = fix_batch(texts)
 
-# For reverse processing
-expanded_texts = ["I cannot go", "They are here", "We will see"]
-results = contract_batch(expanded_texts)  # Uses shared cache and optimized processing
+# ✅ Efficient: Reuse fixer instance
+fixer = ContractionFixer()
+results = [fixer.fix(text) for text in texts]
 
-# Less efficient for multiple texts
-results = [fix(text) for text in texts]  # Creates new instances
+# ❌ Less efficient: Individual function calls
+results = [fix(text) for text in texts]
+```
+
+## Configuration Options
+
+### ContractionFixer Parameters
+
+- **`use_informal: bool = True`**
+  - Include informal contractions like "gonna" → "going to"
+  - Set to `False` for formal text processing
+
+- **`use_slang: bool = True`**
+  - Include internet slang like "brb" → "be right back"
+  - Set to `False` for academic or professional applications
+
+- **`cache_size: int = 1024`**
+  - LRU cache size for memoization
+  - Increase for better performance with repeated inputs
+  - Decrease to reduce memory usage
+
+### Example Configurations
+
+```python
+from contraction_fix import ContractionFixer
+
+# Formal text processing
+formal_fixer = ContractionFixer(use_informal=False, use_slang=False)
+
+# High performance setup
+fast_fixer = ContractionFixer(cache_size=4096)
+
+# Memory conservative setup
+light_fixer = ContractionFixer(cache_size=256)
 ```
 
 ## API Reference
 
-### Functions
+### Package Functions
 
-- `fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str`
-- `fix_batch(texts: List[str], use_informal: bool = True, use_slang: bool = True) -> List[str]`
-- `contract(text: str, use_informal: bool = True, use_slang: bool = True) -> str` **(NEW!)**
-- `contract_batch(texts: List[str], use_informal: bool = True, use_slang: bool = True) -> List[str]` **(NEW!)**
+```python
+# Expansion functions
+fix(text: str, use_informal: bool = True, use_slang: bool = True) -> str
+fix_batch(texts: List[str], use_informal: bool = True, use_slang: bool = True) -> List[str]
 
-### Classes
+# Contraction functions
+contract(text: str, use_informal: bool = True, use_slang: bool = True) -> str
+contract_batch(texts: List[str], use_informal: bool = True, use_slang: bool = True) -> List[str]
+```
 
-- `ContractionFixer(use_informal: bool = True, use_slang: bool = True, cache_size: int = 1024)`
-  - `fix(text: str) -> str`
-  - `fix_batch(texts: List[str]) -> List[str]`
-  - `contract(text: str) -> str` **(NEW!)**
-  - `contract_batch(texts: List[str]) -> List[str]` **(NEW!)**
-  - `preview(text: str, context_size: int = 10) -> List[Match]`
-  - `add_contraction(contraction: str, expansion: str) -> None`
-  - `remove_contraction(contraction: str) -> None`
+### ContractionFixer Class
 
-## What's New in v0.2.1
+```python
+class ContractionFixer:
+    def __init__(self, use_informal: bool = True, use_slang: bool = True, cache_size: int = 1024)
+    
+    # Core methods
+    def fix(self, text: str) -> str
+    def fix_batch(self, texts: List[str]) -> List[str]
+    def contract(self, text: str) -> str
+    def contract_batch(self, texts: List[str]) -> List[str]
+    
+    # Utility methods
+    def preview(self, text: str, context_size: int = 10) -> List[Match]
+    def add_contraction(self, contraction: str, expansion: str) -> None
+    def remove_contraction(self, contraction: str) -> None
+```
 
-- **Reverse Functionality**: New `contract()` and `contract_batch()` methods to convert expanded forms back to contractions
-- **Enhanced API**: Package-level convenience functions for reverse functionality
-- **Comprehensive Testing**: Extensive test coverage for all new functionality
-- **Improved Performance**: Optimizations for both expansion and contraction operations
+### Match Class
+
+```python
+@dataclass
+class Match:
+    text: str          # The matched contraction
+    start: int         # Start position in original text
+    end: int           # End position in original text
+    replacement: str   # What it will be replaced with
+    context: str       # Surrounding context
+```
+
+## Examples
+
+### Text Preprocessing Pipeline
+
+```python
+from contraction_fix import ContractionFixer
+
+def preprocess_text(text: str) -> str:
+    """Example preprocessing pipeline"""
+    fixer = ContractionFixer(use_slang=False)  # Formal processing
+    
+    # Expand contractions for consistent analysis
+    expanded = fixer.fix(text)
+    
+    # Your other preprocessing steps here
+    # (tokenization, lowercasing, etc.)
+    
+    return expanded
+
+# Usage
+raw_text = "I can't believe it's working! They're awesome."
+processed = preprocess_text(raw_text)
+print(processed)  # "I cannot believe it is working! They are awesome."
+```
+
+### Chat Message Processing
+
+```python
+from contraction_fix import ContractionFixer
+
+def normalize_chat_message(message: str) -> str:
+    """Normalize casual chat messages"""
+    fixer = ContractionFixer(use_informal=True, use_slang=True)
+    
+    # Expand everything for consistent processing
+    return fixer.fix(message)
+
+# Usage
+chat_msg = "hey btw, i can't make it tonight lol"
+normalized = normalize_chat_message(chat_msg)
+print(normalized)  # "hey by the way, I cannot make it tonight laugh out loud"
+```
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request. Make sure to:
+
+1. Add tests for new functionality
+2. Update documentation as needed
+3. Follow the existing code style
+4. Ensure all tests pass
 
 ## License
 
