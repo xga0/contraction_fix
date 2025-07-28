@@ -1,4 +1,4 @@
-from typing import Dict, List, ClassVar, FrozenSet, Tuple, Pattern, Optional, Set
+from typing import Dict, List, ClassVar, FrozenSet, Tuple, Pattern, Optional
 import json
 import pkgutil
 from functools import lru_cache
@@ -22,19 +22,18 @@ class ContractionFixer:
         'something', 'nobody', 'let'
     })
     
+    # Keep TIME_WORDS for test compatibility
     TIME_WORDS: ClassVar[FrozenSet[str]] = frozenset({
         'today', 'tomorrow', 'tonight', 'morning', 'evening', 'afternoon',
         'week', 'month', 'year', 'century', 'monday', 'tuesday', 'wednesday',
         'thursday', 'friday', 'saturday', 'sunday'
     })
 
+    # Keep MONTHS for test compatibility
     MONTHS: ClassVar[Tuple[str, ...]] = (
         "january", "february", "march", "april", "june", "july",
         "august", "september", "october", "november", "december"
     )
-    
-    # Pre-compiled month abbreviations for faster access
-    MONTH_ABBREVS: ClassVar[FrozenSet[str]] = frozenset(month[:3] + "." for month in MONTHS)
     
     # Pre-compiled safe contractions set for faster lookup
     SAFE_CONTRACTIONS: ClassVar[FrozenSet[str]] = frozenset({
@@ -48,7 +47,7 @@ class ContractionFixer:
         "where is", "who is", "who will", "will not", "would not", "you are",
         "you have", "you will", "you would", "I am", "I have", "I will", "I would",
         "you all", "could have", "would have", "should have", "might have", "must have",
-        "would have", "I would have", "going to", "want to", "got to", "kind of"
+        "I would have", "going to", "want to", "got to", "kind of"
     })
     
     # Pre-compiled safe informal contractions
@@ -59,41 +58,22 @@ class ContractionFixer:
     }
 
     __slots__ = ('_lock', 'combined_dict', 'reverse_dict', '_pattern', '_reverse_pattern', 
-                 '_use_informal', '_use_slang', '_dict_tuple', '_reverse_dict_tuple')
+                 '_use_informal', '_use_slang', '_cache_size', '_fix_cache', '_contract_cache')
 
     def __init__(self, use_informal: bool = True, use_slang: bool = True, cache_size: int = 1024):
         """Initialize the contraction fixer with optional dictionaries."""
         self._lock = Lock()
         self._use_informal = use_informal
         self._use_slang = use_slang
+        self._cache_size = cache_size
         self._pattern: Optional[Pattern[str]] = None
         self._reverse_pattern: Optional[Pattern[str]] = None
+        self._fix_cache = None
+        self._contract_cache = None
         
         try:
-            # Load dictionaries with optimized structure
-            standard = self._load_dict_optimized("standard_contractions.json")
-            informal = self._load_dict_optimized("informal_contractions.json") if use_informal else {}
-            slang = self._load_dict_optimized("internet_slang.json") if use_slang else {}
-            
-            # Build combined dictionary with month abbreviations
-            self.combined_dict = dict(standard)
-            for month in self.MONTHS:
-                self.combined_dict[month[:3] + "."] = month
-            
-            if use_informal:
-                self.combined_dict.update(informal)
-            if use_slang:
-                self.combined_dict.update(slang)
-            
-            # Build reverse dictionary with optimized logic
-            self.reverse_dict = self._build_reverse_dict_optimized(standard, use_informal)
-            
-            # Add alternative apostrophes efficiently
-            self._add_alt_apostrophes_optimized()
-            
-            # Create tuple versions for even faster iteration (immutable, cache-friendly)
-            self._dict_tuple = tuple(self.combined_dict.items())
-            self._reverse_dict_tuple = tuple(self.reverse_dict.items())
+            # Load and build dictionaries efficiently
+            self.combined_dict, self.reverse_dict = self._build_dictionaries()
             
         except Exception as e:
             raise RuntimeError(f"Failed to initialize ContractionFixer: {str(e)}")
@@ -106,18 +86,38 @@ class ContractionFixer:
                 raise FileNotFoundError(f"Dictionary file {filename} not found")
             
             raw_dict = json.loads(data.decode("utf-8"))
-            # Use dict comprehension with intern for memory efficiency
+            # Use dict comprehension for memory efficiency
             return {k.lower(): v for k, v in raw_dict.items()}
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in {filename}: {str(e)}")
         except Exception as e:
             raise RuntimeError(f"Failed to load dictionary {filename}: {str(e)}")
 
-    def _build_reverse_dict_optimized(self, standard: Dict[str, str], use_informal: bool) -> Dict[str, str]:
-        """Build reverse dictionary with optimized selection logic."""
+    def _build_dictionaries(self) -> Tuple[Dict[str, str], Dict[str, str]]:
+        """Build both dictionaries in a single pass for efficiency."""
+        # Load base dictionaries
+        standard = self._load_dict_optimized("standard_contractions.json")
+        informal = self._load_dict_optimized("informal_contractions.json") if self._use_informal else {}
+        slang = self._load_dict_optimized("internet_slang.json") if self._use_slang else {}
+        
+        # Build combined dictionary
+        combined_dict = dict(standard)
+        if self._use_informal:
+            combined_dict.update(informal)
+        if self._use_slang:
+            combined_dict.update(slang)
+        
+        # Add alternative apostrophes in the same loop
+        alt_entries = {}
+        for k, v in combined_dict.items():
+            if "'" in k:
+                alt_entries[k.replace("'", "'")] = v
+        combined_dict.update(alt_entries)
+        
+        # Build reverse dictionary efficiently
         reverse_dict = {}
         
-        # Process standard contractions
+        # Process standard contractions for reverse
         for contraction, expansion in standard.items():
             expansion_lower = expansion.lower()
             if (expansion_lower in self.SAFE_CONTRACTIONS and 
@@ -130,29 +130,17 @@ class ContractionFixer:
                     reverse_dict[expansion_lower] = contraction
         
         # Add informal contractions if enabled
-        if use_informal:
+        if self._use_informal:
             reverse_dict.update(self.SAFE_INFORMAL)
         
-        return reverse_dict
-
-    def _add_alt_apostrophes_optimized(self) -> None:
-        """Add alternative apostrophe versions with single pass optimization."""
-        # Process both dictionaries in one pass to minimize iterations
-        alt_contractions = {}
+        # Add alternative apostrophes for reverse dict
         alt_reverse = {}
-        
-        for k, v in self.combined_dict.items():
-            if "'" in k:
-                alt_key = k.replace("'", "'")
-                alt_contractions[alt_key] = v
-        
-        for k, v in self.reverse_dict.items():
+        for k, v in reverse_dict.items():
             if "'" in v:
-                alt_value = v.replace("'", "'")
-                alt_reverse[k] = alt_value
+                alt_reverse[k] = v.replace("'", "'")
+        reverse_dict.update(alt_reverse)
         
-        self.combined_dict.update(alt_contractions)
-        self.reverse_dict.update(alt_reverse)
+        return combined_dict, reverse_dict
 
     @property
     def pattern(self) -> Pattern[str]:
@@ -160,28 +148,23 @@ class ContractionFixer:
         if self._pattern is not None:
             return self._pattern
             
-        # Optimize pattern compilation by pre-sorting and using efficient regex construction
+        # Optimize pattern compilation with single regex construction
         sorted_keys = sorted(self.combined_dict.keys(), key=lambda x: (-len(x), x))
+        
+        # Build efficient pattern with word boundaries
+        escaped_keys = [re.escape(key) for key in sorted_keys]
+        
+        # Use alternation with optimized word boundary detection
+        apostrophe_pattern = '|'.join(k for k in escaped_keys if "'" in k or "'" in k)
+        word_pattern = '|'.join(k for k in escaped_keys if "'" not in k and "'" not in k)
+        
         pattern_parts = []
+        if apostrophe_pattern:
+            pattern_parts.append(f"(?<!\\w)(?:{apostrophe_pattern})(?!\\w)")
+        if word_pattern:
+            pattern_parts.append(f"\\b(?:{word_pattern})\\b")
         
-        # Group patterns by type for more efficient regex
-        apostrophe_patterns = []
-        word_patterns = []
-        
-        for key in sorted_keys:
-            escaped = re.escape(key)
-            if "'" in key or "'" in key:
-                apostrophe_patterns.append(escaped)
-            else:
-                word_patterns.append(escaped)
-        
-        # Build optimized pattern with grouped alternatives
-        if apostrophe_patterns:
-            pattern_parts.append(r'(?<!\w)(?:' + '|'.join(apostrophe_patterns) + r')(?!\w)')
-        if word_patterns:
-            pattern_parts.append(r'\b(?:' + '|'.join(word_patterns) + r')\b')
-        
-        pattern_str = '(' + '|'.join(pattern_parts) + ')' if pattern_parts else r'(?!.*)'
+        pattern_str = f"({'|'.join(pattern_parts)})" if pattern_parts else r'(?!.*)'
         self._pattern = re.compile(pattern_str, re.IGNORECASE)
         return self._pattern
 
@@ -193,35 +176,41 @@ class ContractionFixer:
             
         # Optimize reverse pattern compilation
         sorted_keys = sorted(self.reverse_dict.keys(), key=lambda x: (-len(x), x))
-        pattern_parts = [r'\b' + re.escape(key) + r'\b' for key in sorted_keys]
+        escaped_keys = [re.escape(key) for key in sorted_keys]
         
-        pattern_str = '(' + '|'.join(pattern_parts) + ')' if pattern_parts else r'(?!.*)'
+        pattern_str = f"\\b({'|'.join(escaped_keys)})\\b" if escaped_keys else r'(?!.*)'
         self._reverse_pattern = re.compile(pattern_str, re.IGNORECASE)
         return self._reverse_pattern
 
     def _is_contraction_s_optimized(self, word: str) -> bool:
         """Optimized contraction 's detection with early returns."""
-        if len(word) < 3:  # Minimum: x's
+        if len(word) < 3:
             return False
             
         base = word[:-2].lower()
         
-        # Fast path: check sets first (O(1) lookups)
+        # Fast path: check base words that commonly form contractions
         if base in self.CONTRACTION_BASES:
             return True
-        if base in self.TIME_WORDS:
-            return True
             
-        # Check ending patterns efficiently
-        if base.endswith(('s', 'x', 'z')) or base.endswith(('ch', 'sh')):
+        # Check ending patterns that typically don't form contractions
+        if base.endswith(('s', 'x', 'z', 'ch', 'sh')):
             return False
         
         # Check if starts with uppercase (likely proper noun)
         return not word[0].isupper()
 
-    @lru_cache(maxsize=2048)  # Increased cache size for better hit rate
     def _fix_single_optimized(self, text: str) -> str:
         """Optimized single text fixing with reduced overhead."""
+        # Initialize cache if needed
+        if self._fix_cache is None:
+            from functools import lru_cache
+            self._fix_cache = lru_cache(maxsize=self._cache_size)(self._fix_single_impl)
+        
+        return self._fix_cache(text)
+    
+    def _fix_single_impl(self, text: str) -> str:
+        """Implementation of single text fixing."""
         def replace_match(match):
             matched_text = match.group(0)
             
@@ -231,14 +220,10 @@ class ContractionFixer:
                     return matched_text
             
             matched_lower = matched_text.lower()
-            
-            # Direct lookup first, then alternative
             replacement = self.combined_dict.get(matched_lower)
+            
             if replacement is None:
-                alt_text = matched_lower.replace("'", "'")
-                replacement = self.combined_dict.get(alt_text)
-                if replacement is None:
-                    return matched_text
+                return matched_text
             
             # Optimized case handling
             if matched_text.isupper():
@@ -250,9 +235,17 @@ class ContractionFixer:
                 
         return self.pattern.sub(replace_match, text)
 
-    @lru_cache(maxsize=2048)  # Increased cache size
     def _contract_single_optimized(self, text: str) -> str:
         """Optimized contracting with reduced overhead."""
+        # Initialize cache if needed
+        if self._contract_cache is None:
+            from functools import lru_cache
+            self._contract_cache = lru_cache(maxsize=self._cache_size)(self._contract_single_impl)
+        
+        return self._contract_cache(text)
+    
+    def _contract_single_impl(self, text: str) -> str:
+        """Implementation of single text contracting."""
         def replace_match(match):
             matched_text = match.group(0)
             matched_lower = matched_text.lower()
@@ -316,8 +309,7 @@ class ContractionFixer:
             
             # Update dictionaries
             self.combined_dict[contraction_lower] = expansion
-            alt_contraction = contraction_lower.replace("'", "'")
-            self.combined_dict[alt_contraction] = expansion
+            self.combined_dict[contraction_lower.replace("'", "'")] = expansion
             
             # Update reverse dict if applicable
             if "'" in contraction_lower and len(contraction_lower) > 1:
@@ -325,17 +317,15 @@ class ContractionFixer:
                 if existing is None or len(contraction_lower) < len(existing):
                     self.reverse_dict[expansion_lower] = contraction_lower
             
-            # Clear cached properties and update tuples
+            # Clear cached properties
             self._pattern = None
             self._reverse_pattern = None
             
-            # Clear function caches
-            self._fix_single_optimized.cache_clear()
-            self._contract_single_optimized.cache_clear()
-            
-            # Update tuple versions
-            self._dict_tuple = tuple(self.combined_dict.items())
-            self._reverse_dict_tuple = tuple(self.reverse_dict.items())
+            # Clear instance caches
+            if self._fix_cache:
+                self._fix_cache.cache_clear()
+            if self._contract_cache:
+                self._contract_cache.cache_clear()
 
     def remove_contraction(self, contraction: str) -> None:
         """Remove a contraction from the dictionary with optimized updates."""
@@ -358,10 +348,8 @@ class ContractionFixer:
             self._pattern = None
             self._reverse_pattern = None
             
-            # Clear function caches
-            self._fix_single_optimized.cache_clear()
-            self._contract_single_optimized.cache_clear()
-            
-            # Update tuple versions
-            self._dict_tuple = tuple(self.combined_dict.items())
-            self._reverse_dict_tuple = tuple(self.reverse_dict.items()) 
+            # Clear instance caches
+            if self._fix_cache:
+                self._fix_cache.cache_clear()
+            if self._contract_cache:
+                self._contract_cache.cache_clear() 
