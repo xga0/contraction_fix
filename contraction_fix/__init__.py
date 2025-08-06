@@ -71,5 +71,5 @@ def contract_batch(texts: List[str], use_informal: bool = True, use_slang: bool 
         fixer = ContractionFixer(use_informal=use_informal, use_slang=use_slang)
         return fixer.contract_batch(texts)
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __all__ = ["fix", "fix_batch", "contract", "contract_batch", "ContractionFixer"] 
