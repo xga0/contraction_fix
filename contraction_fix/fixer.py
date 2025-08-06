@@ -2,17 +2,22 @@ from typing import Dict, List, ClassVar, FrozenSet, Tuple, Pattern, Optional
 import json
 import pkgutil
 from functools import lru_cache
-from dataclasses import dataclass
 import re
 from threading import Lock
 
-@dataclass(slots=True)
 class Match:
-    text: str
-    start: int
-    end: int
-    replacement: str
-    context: str
+    """Represents a contraction match with context information."""
+    __slots__ = ('text', 'start', 'end', 'replacement', 'context')
+    
+    def __init__(self, text: str, start: int, end: int, replacement: str, context: str):
+        self.text = text
+        self.start = start
+        self.end = end
+        self.replacement = replacement
+        self.context = context
+    
+    def __repr__(self) -> str:
+        return f"Match(text={self.text!r}, start={self.start}, end={self.end}, replacement={self.replacement!r}, context={self.context!r})"
 
 class ContractionFixer:
     # Pre-compiled frozensets for O(1) lookups
